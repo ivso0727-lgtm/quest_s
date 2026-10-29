@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дело № 27 — Последняя улика</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10151d;color:#e9edf2;font-family:Arial,sans-serif;min-height:100vh;padding:20px}
+main{max-width:760px;margin:auto}
+header{text-align:center;padding:35px 10px 25px}
+.tag{color:#e6b45c;letter-spacing:4px;font-size:12px}
+h1{font-size:clamp(30px,7vw,48px);margin:15px 0 10px}
+.subtitle{color:#aab4c2;line-height:1.6}
+.progress{height:6px;background:#303946;border-radius:10px;overflow:hidden;margin:20px 0}
+#bar{height:100%;width:0;background:#e6b45c;transition:.3s}
+.card{background:#1a222e;border:1px solid #34404e;border-radius:18px;padding:clamp(18px,5vw,30px);margin:18px 0;box-shadow:0 12px 35px #0003}
+h2{margin-top:0;font-size:23px}
+p,li{line-height:1.7;color:#d0d7e1}
+.muted{color:#98a5b5;font-size:14px}
+.evidence{background:#121923;border-left:3px solid #e6b45c;padding:14px;margin:12px 0;border-radius:4px}
+button{background:#e6b45c;color:#171717;border:0;border-radius:10px;padding:13px 18px;font-weight:bold;font-size:15px;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+.secondary{background:#303b49;color:#e9edf2}
+input{width:100%;padding:14px;background:#101720;color:white;border:1px solid #465365;border-radius:10px;font-size:16px;margin:10px 0 14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.feedback{min-height:25px;color:#e6b45c;margin-top:12px;line-height:1.5}
+.hidden{display:none!important}
+.option{display:block;width:100%;text-align:left;background:#273241;color:#e9edf2;margin:10px 0;border:1px solid #455365}
+.option:hover{border-color:#e6b45c}
+footer{text-align:center;color:#758294;font-size:12px;padding:25px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="tag">ЗАСЕКРЕЧЕНО · АРХИВ № 027</div>
+<h1>Дело № 27</h1>
+<div class="subtitle">Последняя улика<br>Интерактивное детективное расследование</div>
+</header>
+<div class="progress"><div id="bar"></div></div>
+<div class="muted" id="counter">Этап 1 из 5</div>
+
+<section class="card" id="intro">
+<h2>📁 Материалы дела</h2>
+<p>В 21:00 из закрытого кабинета пропал маленький металлический сундук. Дверь не взламывали, окно было закрыто. В комнате находились трое сотрудников, и каждый утверждает, что ничего не видел.</p>
+<div class="evidence"><b>Твоя задача:</b> изучить место происшествия, допросить свидетелей, расшифровать записку и выяснить, кто забрал сундук.</div>
+<p class="muted">Время расследования: 10–15 минут. Внимательность важнее удачи.</p>
+<button onclick="start()">Начать расследование →</button>
+</section>
+
+<section class="card hidden" id="game">
+<h2 id="stageTitle"></h2>
+<div id="stageBody"></div>
+<div class="feedback" id="feedback" aria-live="polite"></div>
+<div class="actions">
+<button id="check" onclick="checkAnswer()">Проверить ответ</button>
+<button class="secondary" onclick="hint()">Подсказка</button>
+</div>
+</section>
+
+<section class="card hidden" id="ending">
+<h2>🗝️ Дело закрыто</h2>
+<p id="endingText"></p>
+<div class="evidence"><b>Секретный сундук открыт.</b><br>Главная награда — ты смогла раскрыть это дело. А теперь можешь потребовать свой настоящий приз у организатора квеста 😉</div>
+<button onclick="location.reload()">Пройти заново ↻</button>
+</section>
+<footer>CONFIDENTIAL · ДЕЛО № 27 · ДОСТУП РАЗРЕШЁН</footer>
+</main>
+<script>
+const stages=[
+{
+title:"Этап 1. Осмотр места происшествия",
+body:`<p>Осмотри кабинет и выбери улику, которая важнее остальных.</p>
+<div class="evidence">🔎 <b>Улика А.</b> На столе осталась чашка с чаем, ещё тёплая.</div>
+<div class="evidence">🔎 <b>Улика Б.</b> На полу возле сейфа лежит металлическая стружка.</div>
+<div class="evidence">🔎 <b>Улика В.</b> Настенные часы остановились ровно на 21:00.</div>
+<p class="muted">Введи букву самой полезной улики: А, Б или В.</p>
+<input id="answer" placeholder="Твой ответ">`,
+answers:["б","b"],
+hint:"Подумай, какая улика может показать, что делали с замком или металлическим предметом.",
+success:"Верно. Металлическая стружка может указывать на работу с замком или сундуком. Улика отправлена в лабораторию."
+},
+{
+title:"Этап 2. Показания свидетелей",
+body:`<p>Трое сотрудников дали показания. Кто вызывает наибольшее подозрение?</p>
+<div class="evidence"><b>Анна:</b> «Я ушла в 20:50. Часы в кабинете тогда показывали 20:45».</div>
+<div class="evidence"><b>Борис:</b> «Я был в коридоре с 20:55 до 21:05. Слышал металлический звук».</div>
+<div class="evidence"><b>Виктор:</b> «Я вообще не заходил в кабинет, но сундук стоял слева от окна».</div>
+<p class="muted">Введи имя подозреваемого.</p>
+<input id="answer" placeholder="Имя свидетеля">`,
+answers:["виктор","виктор."],
+hint:"Кто знает расположение сундука, хотя утверждает, что не входил в комнату?",
+success:"Именно Виктор. Он знает расположение сундука, хотя говорит, что не заходил в кабинет."
+},
+{
+title:"Этап 3. Зашифрованная записка",
+body:`<p>В кармане Виктора нашли записку. На ней только пять букв:</p>
+<div class="evidence" style="text-align:center;font-size:30px;letter-spacing:7px">Ц Д Р С Ы</div>
+<p>Следователь выяснил, что каждая буква была сдвинута на одну позицию вперёд по русскому алфавиту. Чтобы прочитать записку, сдвинь каждую букву на одну позицию назад.</p>
+<p class="muted">Напиши получившееся слово.</p>
+<input id="answer" placeholder="Расшифрованное слово">`,
+answers:["честь"],
+hint:"Алфавит здесь обычный русский, включая букву Ё. Сдвигай каждую букву на одну назад.",
+success:"Записка гласит «ЧЕСТЬ». Возможно, это кодовое слово, но почему оно связано с сундуком?"
+},
+{
+title:"Этап 4. Кто забрал сундук?",
+body:`<p>Лаборатория проверила металлическую стружку. Она совпала с материалом замка сундука. Борис слышал звук, а Виктор знал, где стоял сундук.</p>
+<p>Также выяснилось, что у Виктора был ключ от служебного шкафа с инструментами.</p>
+<p><b>Кто, вероятнее всего, забрал сундук?</b></p>
+<button class="option" onclick="choose('Анна')">Анна — она ушла раньше остальных</button>
+<button class="option" onclick="choose('Борис')">Борис — он слышал металлический звук</button>
+<button class="option" onclick="choose('Виктор')">Виктор — его показания противоречат уликам</button>
+<input id="answer" placeholder="Или введи имя здесь">`,
+answers:["виктор"],
+hint:"Сопоставь ложные показания, знание расположения сундука и доступ к инструментам.",
+success:"Верно. Все улики указывают на Виктора: он знал расположение сундука и имел доступ к инструментам."
+},
+{
+title:"Этап 5. Код секретного сундука",
+body:`<p>Виктор признался, что сундук спрятан в архиве. На замке три цифры. Рядом оставили последнюю записку:</p>
+<div class="evidence">«Сначала посчитай сотрудников, затем минуты, которые понадобились на исчезновение сундука, и в конце — окна в кабинете».</div>
+<p>В кабинете было <b>3 сотрудника</b>. Исчезновение заняло <b>2 минуты</b>. В кабинете было <b>1 окно</b>.</p>
+<p class="muted">Введи трёхзначный код.</p>
+<input id="answer" placeholder="___" inputmode="numeric">`,
+answers:["321"],
+hint:"Запиши числа в том порядке, в котором они перечислены в записке.",
+success:"Код принят. Замок щёлкает, и сундук открывается!"
+}
+];
+let current=0, solved=false;
+function start(){
+document.getElementById("intro").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+render();
+}
+function render(){
+solved=false;
+const s=stages[current];
+document.getElementById("stageTitle").textContent=s.title;
+document.getElementById("stageBody").innerHTML=s.body;
+document.getElementById("feedback").textContent="";
+document.getElementById("check").textContent="Проверить ответ";
+document.getElementById("check").disabled=false;
+document.getElementById("counter").textContent=`Этап ${current+1} из ${stages.length}`;
+document.getElementById("bar").style.width=`${current/stages.length*100}%`;
+}
+function choose(value){
+const input=document.getElementById("answer");
+if(input) input.value=value;
+}
+function checkAnswer(){
+if(solved){
+current++;
+if(current>=stages.length){
+document.getElementById("game").classList.add("hidden");
+document.getElementById("ending").classList.remove("hidden");
+document.getElementById("endingText").textContent="Ты раскрыла дело № 27. Виктор признался, сундук найден, а все улики сошлись. Отличная работа, детектив!";
+document.getElementById("bar").style.width="100%";
+document.getElementById("counter").textContent="Расследование завершено";
+}else render();
+return;
+}
+const input=document.getElementById("answer");
+if(!input){document.getElementById("feedback").textContent="Выбери один из вариантов выше.";return;}
+const value=input.value.trim().toLowerCase().replaceAll("ё","е");
+const accepted=stages[current].answers.map(a=>a.toLowerCase().replaceAll("ё","е"));
+if(accepted.includes(value)){
+solved=true;
+document.getElementById("feedback").textContent="✓ "+stages[current].success;
+document.getElementById("check").textContent=current===stages.length-1?"Открыть сундук →":"Следующий этап →";
+}else{
+document.getElementById("feedback").textContent="Не совсем. Проверь улики и попробуй ещё раз.";
+}
+}
+function hint(){
+document.getElementById("feedback").textContent="Подсказка: "+stages[current].hint;
+}
+</script>
+</body>
+</html>
